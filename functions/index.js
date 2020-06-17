@@ -1,24 +1,89 @@
 const functions = require('firebase-functions')
 const SteamAPI = require('steamapi')
-const app = require('express')()
+const passport = require('passport')
+const SteamStrategy = require('passport-steam')
+const express = require('express')
+const session = require('express-session')
 const fs = require('fs')
-const cors = require('cors')({ origin: true })
+const initcors = require('cors')
 
-const config = getConfig()
-const steam = new SteamAPI(config.steam.apikey)
-const CSGO_APPID = '730'
-const MIN_HOURS_PLAYTIME = 2000
+// Environment variables
+var config = {}
 
-function getConfig() {
-	if (process.env.NODE_ENV === 'production') {
-		return functions.config().env
-	} else {
-		if (fs.existsSync('./.env.json')) {
-			return require('./.env.json')
-		}
+if (process.env.NODE_ENV === 'production') {
+	config = functions.config().env
+	config.baseURL = `https://${process.env.FIREBASE_CONFIG.projectId}.web.app`
+} else {
+	if (fs.existsSync('./.env.json')) {
+		config = require('./.env.json')
+		config.baseURL = `https://localhost:5000`
 	}
 }
 
+console.log(process.env)
+
+// Constants
+const CSGO_APPID = '730'
+const MIN_HOURS_PLAYTIME = 2000
+
+// Init objects
+const steam = new SteamAPI(config.steam.apikey)
+const app = express()
+const cors = initcors({ origin: true })
+
+// Configure passport to use Steam
+passport.use(new SteamStrategy({
+	returnURL: `${config.baseURL}/api/auth/steam/return`,
+	realm: config.baseURL,
+	apiKey: config.steam.apikey
+	},
+	function(identifier, profile, done) {
+		// asynchronous verification, for effect...
+		process.nextTick(function () {
+			profile.identifier = identifier;
+			return done(null, profile);
+		});		
+	}
+));
+
+passport.serializeUser(function(user, done) {
+	done(null, user);
+});
+
+passport.deserializeUser(function(obj, done) {
+	done(null, obj);
+});
+
+// Initialize session
+app.use(session({
+	secret: config.session_key,
+	name: 'user-session',
+	resave: true,
+	saveUninitialized: true
+}));
+
+// Initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Authentication endpoints
+app.get('/api/auth/steam', (req, res, next) => {
+	req.session.discord_id = req.query.discord_id;
+	req.session.save(next);
+	console.log("Redirecting to Steam!")
+}, passport.authenticate('steam'));
+
+app.get('/api/auth/steam/return',
+	passport.authenticate('steam', {
+		failureRedirect: config.discord_url
+	}),
+	function(req, res) {
+		console.log(req.session)
+		res.redirect(config.discord_url);
+	}
+);
+
+// Core endpoints
 app.post('/api/inscribe', (req, res) => {
 	var player = {}
 
