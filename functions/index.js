@@ -6,6 +6,7 @@ const express = require('express')
 const session = require('express-session')
 const fs = require('fs')
 const initcors = require('cors')
+const json2csv = require('json2csv');
 
 // Environment variables
 var config = {}
@@ -20,7 +21,10 @@ if (process.env.NODE_ENV === 'production') {
 	}
 }
 
-console.log(process.env)
+// Firebase functions config
+const functionsConfig = {
+	timeoutSeconds: 540
+}
 
 // Constants
 const CSGO_APPID = '730'
@@ -83,6 +87,40 @@ app.get('/api/auth/steam/return',
 	}
 );
 
+// SteamID Parser
+app.get('/api/steamid/parser', async (req, res) => {
+	var profiles = req.body.split('\n')
+	var players = []
+
+	for (let steamURL of profiles) {
+		let player = {}
+
+		console.log(players.length + " - " + steamURL)
+
+		await steam
+			.resolve(steamURL)
+			.then((steamid64) => steam.getUserSummary(steamid64))
+			.then((summary) => {
+				player = summary
+				player.profile_url = 'https://steamcommunity.com/profiles/' + player.steamID
+
+				players.push(player)
+
+				console.log("adding player : ", player)
+			})
+	}
+
+	// Transform to CSV
+	const csv = json2csv.parse(players, {
+		fields:['nickname', 'steamID', 'profile_url']
+	});
+
+	console.log(csv)
+
+	res.attachment('steamdata.csv')
+	res.status(200).send(csv)
+})
+
 // Core endpoints
 app.post('/api/inscribe', (req, res) => {
 	var player = {}
@@ -142,4 +180,6 @@ function hoursToMinutes(hours) {
 	return hours * 60
 }
 
-exports.app = functions.https.onRequest(app)
+exports.app = functions
+	.runWith(functionsConfig)
+	.https.onRequest(app)
