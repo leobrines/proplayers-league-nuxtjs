@@ -1,46 +1,75 @@
 <template>
-  <section class="section">
-    <div class="columns is-mobile">
-      <card title="Free" icon="github-circle">
-        Open source on
-        <a href="https://github.com/buefy/buefy">
-          GitHub
-        </a>
-      </card>
+	<section class="section">
+		<div class="columns is-mobile">
+			<card title="Free" icon="github-circle">
+				Open source on
+				<a href="https://github.com/buefy/buefy">
+					GitHub
+				</a>
+			</card>
 
-      <card title="Responsive" icon="cellphone-link">
-        <b class="has-text-grey">
-          Every
-        </b>
-        component is responsive
-      </card>
+			<card title="Responsive" icon="cellphone-link">
+				<b class="has-text-grey">
+					Every
+				</b>
+				component is responsive
+			</card>
 
-      <card title="Modern" icon="alert-decagram">
-        Built with
-        <a href="https://vuejs.org/">
-          Vue.js
-        </a>
-        and
-        <a href="http://bulma.io/">
-          Bulma
-        </a>
-      </card>
+			<card title="Modern" icon="alert-decagram">
+				Built with
+				<a href="https://vuejs.org/">
+					Vue.js
+				</a>
+				and
+				<a href="http://bulma.io/">
+					Bulma
+				</a>
+			</card>
 
-      <card title="Lightweight" icon="arrange-bring-to-front">
-        No other internal dependency
-      </card>
-    </div>
-  </section>
+			<card title="Lightweight" icon="arrange-bring-to-front">
+				No other internal dependency
+			</card>
+
+			<button @click="inscribePlayer">
+				Inscribir jugador
+			</button>
+		</div>
+	</section>
 </template>
 
 <script>
 import Card from '~/components/Card'
 
 export default {
-  name: 'HomePage',
+	name: 'HomePage',
 
-  components: {
-    Card
-  }
+	components: {
+		Card
+	},
+
+	created() {
+		console.log(process)
+		this.$fireAuth
+			.signInAnonymously()
+			.then(() => console.log('Registrado anonimamente'))
+			.catch(function(error) {
+				console.log(error)
+			})
+	},
+
+	methods: {
+		inscribePlayer(evt) {
+			this.$axios
+				.$post(window.location.href + 'api/inscribe', {
+					steamURL: 'https://steamcommunity.com/id/leobrines'
+				})
+				.then((data) => {
+					console.log(data)
+				})
+				.catch((error) => {
+					console.log(error.body)
+				})
+		}
+	}
 }
 </script>

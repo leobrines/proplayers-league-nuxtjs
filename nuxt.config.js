@@ -1,3 +1,5 @@
+import firebaseConfig from './firebase.cfg.js'
+
 export default {
   mode: 'spa',
   /*
@@ -42,22 +44,17 @@ export default {
     // Doc: https://buefy.github.io/#/documentation
     'nuxt-buefy',
     // Doc: https://github.com/nuxt-community/dotenv-module
-    '@nuxtjs/dotenv',
+	 '@nuxtjs/dotenv',
+	 '@nuxtjs/axios',
     [
       '@nuxtjs/firebase',
       {
-        config: {
-          apiKey: process.env.REACT_APP_FIREBASE_APIKEY,
-          authDomain: process.env.REACT_APP_FIREBASE_AUTHDOMAIN,
-          databaseURL: process.env.REACT_APP_FIREBASE_DATABASEURL,
-          projectId: process.env.REACT_APP_FIREBASE_PROJECTID,
-          storageBucket: process.env.REACT_APP_FIREBASE_STORAGEBUCKET,
-          messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGESENDERID,
-          appId: process.env.REACT_APP_FIREBASE_APPID
-        },
+        config: firebaseConfig,
         onFirebaseHosting: true,
         services: {
-          storage: true
+			 storage: true,
+			 functions: true,
+			 auth: true
         }
       }
     ]
